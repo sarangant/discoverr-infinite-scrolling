@@ -4,23 +4,18 @@ import React, { useEffect, useRef } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
 import { DataGrid, GridColDef } from "@mui/x-data-grid";
 import axios from "axios";
+import { Record } from "../types/interface";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const ACCESS_TOKEN = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
 
-interface Record {
-  rowId: string;
-  serialNo: string;
-  phone: string;
-}
-
 const fetchRecords = async ({ pageParam = 0 }): Promise<Record[]> => {
   try {
-    const response = await axios.get<Record[]>(
+    const { data } = await axios.get<Record[]>(
       `${API_URL}?fields=rowId,serialNo,phone&limit=50&offset=${pageParam}&sorting=rowid-`,
       { headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } }
     );
-    return response.data;
+    return data;
   } catch (error) {
     console.error("Error fetching records:", error);
     return [];
@@ -28,30 +23,30 @@ const fetchRecords = async ({ pageParam = 0 }): Promise<Record[]> => {
 };
 
 const InfiniteScrollTable: React.FC = () => {
-  const gridContainerRef = useRef<HTMLDivElement | null>(null);
+  const gridContainerRef = useRef<HTMLDivElement>(null);
 
   const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
     useInfiniteQuery({
       queryKey: ["records"],
       queryFn: fetchRecords,
       initialPageParam: 0,
-      getNextPageParam: (_lastPage, allPages) => {
-        const totalRecords = allPages.flat().length;
-        return totalRecords >= 50 ? totalRecords : undefined;
-      },
+      getNextPageParam: (lastPage, allPages) =>
+        allPages.flat().length >= 50 ? allPages.flat().length : undefined,
     });
 
   useEffect(() => {
-    const container = gridContainerRef.current?.querySelector(
+    const container = gridContainerRef.current?.querySelector<HTMLDivElement>(
       ".MuiDataGrid-virtualScroller"
     );
     if (!container) return;
 
     const handleScroll = () => {
-      const isNearBottom =
+      if (
         container.scrollTop + container.clientHeight >=
-        container.scrollHeight - 10;
-      if (isNearBottom && hasNextPage && !isFetchingNextPage) {
+          container.scrollHeight - 10 &&
+        hasNextPage &&
+        !isFetchingNextPage
+      ) {
         fetchNextPage();
       }
     };
@@ -60,7 +55,7 @@ const InfiniteScrollTable: React.FC = () => {
     return () => container.removeEventListener("scroll", handleScroll);
   }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
 
-  const records = data?.pages.flat() || [];
+  const records: Record[] = data?.pages.flat() || [];
 
   const columns: GridColDef[] = [
     {
@@ -81,11 +76,6 @@ const InfiniteScrollTable: React.FC = () => {
         rows={records}
         columns={columns}
         getRowId={(row) => row.rowId}
-        hideFooterPagination
-        disableColumnMenu
-        disableRowSelectionOnClick
-        disableColumnSelector
-        sortingMode="server"
         loading={isFetchingNextPage}
       />
     </div>
