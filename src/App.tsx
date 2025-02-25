@@ -5,11 +5,11 @@ import Page from "./app/page"; // Ensure this is correctly imported
 const queryClient = new QueryClient();
 
 const App: React.FC = () => {
-    return (
-        <QueryClientProvider client={queryClient}>
-            <Page />
-        </QueryClientProvider>
-    );
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Page />
+    </QueryClientProvider>
+  );
 };
 
 export default App;
