@@ -1,18 +1,29 @@
 "use client";
 
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { useInfiniteQuery } from "@tanstack/react-query";
-import { DataGrid, GridColDef } from "@mui/x-data-grid";
+import {
+  DataGridPro,
+  GridColDef,
+  GridToolbarContainer,
+  GridToolbarQuickFilter,
+  GridToolbarExport,
+} from "@mui/x-data-grid-pro";
 import axios from "axios";
+import { CircularProgress, Box, Paper } from "@mui/material";
 import { Record } from "../types/interface";
+import styles from "@/styles/InfiniteScrollTable.module.scss";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL;
 const ACCESS_TOKEN = process.env.NEXT_PUBLIC_ACCESS_TOKEN;
 
-const fetchRecords = async ({ pageParam = 0 }): Promise<Record[]> => {
+const fetchRecords = async ({
+  pageParam = 0,
+  searchQuery = "",
+}): Promise<Record[]> => {
   try {
     const { data } = await axios.get<Record[]>(
-      `${API_URL}?fields=rowId,serialNo,phone&limit=50&offset=${pageParam}&sorting=rowid-`,
+      `${API_URL}?fields=rowId,serialNo,phone&limit=50&offset=${pageParam}&sorting=rowid-&search=${searchQuery}`,
       { headers: { Authorization: `Bearer ${ACCESS_TOKEN}` } }
     );
     return data;
@@ -22,13 +33,23 @@ const fetchRecords = async ({ pageParam = 0 }): Promise<Record[]> => {
   }
 };
 
+const CustomToolbar = () => (
+  <GridToolbarContainer>
+    <Box sx={{ marginLeft: "auto", display: "flex", gap: 1 }}>
+      <GridToolbarQuickFilter />
+      <GridToolbarExport />
+    </Box>
+  </GridToolbarContainer>
+);
+
 const InfiniteScrollTable: React.FC = () => {
   const gridContainerRef = useRef<HTMLDivElement>(null);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage } =
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, refetch } =
     useInfiniteQuery({
-      queryKey: ["records"],
-      queryFn: fetchRecords,
+      queryKey: ["records", searchQuery],
+      queryFn: ({ pageParam }) => fetchRecords({ pageParam, searchQuery }),
       initialPageParam: 0,
       getNextPageParam: (lastPage, allPages) =>
         allPages.flat().length >= 50 ? allPages.flat().length : undefined,
@@ -58,27 +79,30 @@ const InfiniteScrollTable: React.FC = () => {
   const records: Record[] = data?.pages.flat() || [];
 
   const columns: GridColDef[] = [
-    {
-      field: "index",
-      headerName: "#",
-      width: 80,
-      renderCell: (params) =>
-        records.findIndex((record) => record.rowId === params.row.rowId) + 1,
-    },
     { field: "rowId", headerName: "Row ID", width: 150 },
     { field: "serialNo", headerName: "Serial No", width: 150 },
     { field: "phone", headerName: "Phone", width: 200 },
   ];
 
   return (
-    <div ref={gridContainerRef} style={{ height: 500, width: "100%" }}>
-      <DataGrid
-        rows={records}
-        columns={columns}
-        getRowId={(row) => row.rowId}
-        loading={isFetchingNextPage}
-      />
-    </div>
+    <Paper className={styles.tableContainer}>
+      <Box ref={gridContainerRef} className={styles.gridContainer}>
+        <DataGridPro
+          rows={records}
+          columns={columns}
+          getRowId={(row) => row.rowId}
+          loading={isFetchingNextPage}
+          checkboxSelection
+          slots={{ toolbar: CustomToolbar }}
+          className={styles.dataGrid}
+        />
+        {isFetchingNextPage && (
+          <Box className={styles.loadingIndicator}>
+            <CircularProgress size={24} />
+          </Box>
+        )}
+      </Box>
+    </Paper>
   );
 };
 

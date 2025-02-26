@@ -1,0 +1,51 @@
+// Table Container
+.tableContainer {
+  height: 500px;
+  width: 100%;
+  padding: 16px;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+  color: #000000;
+}
+
+// Table Title
+.tableTitle {
+  margin-bottom: 16px;
+  font-weight: bold;
+  color: #000000;
+}
+
+// Grid Container
+.gridContainer {
+  height: 100%;
+  position: relative;
+}
+
+// Data Grid Styling
+.dataGrid {
+  & .MuiDataGrid-columnHeaders {
+    background-color: #f5f5f5;
+    font-weight: bold;
+    color: #000000;
+  }
+
+  & .MuiDataGrid-root {
+    border-radius: 8px;
+    background-color: #ffffff;
+    color: #000000;
+  }
+
+  & .MuiDataGrid-cell {
+    border-bottom: 1px solid #ddd;
+    color: #000000;
+  }
+}
+
+// Loading Indicator
+.loadingIndicator {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+}
